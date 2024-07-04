@@ -9,6 +9,7 @@ const player = "p";
 const box = "b";
 const goal = "g";
 const wall = "w";
+const enemy = "e";
 
 setLegend(
   [ player, bitmap`
@@ -78,54 +79,44 @@ setLegend(
 0000000000000000
 0000000000000000
 0000000000000000
-0000000000000000`]
+0000000000000000`],
+  [enemy, bitmap`
+................
+................
+....6666666.....
+....6.....6.....
+....66...66.....
+....6.....6.....
+....6666666.....
+....6666666.....
+....6666666.....
+.....6...6......
+.....6...6......
+.....6...6......
+................
+................
+................
+................`],
 );
 
 const myTune = tune`
 500,
-500: C4^500,
-500: D4^500,
-500: E4^500,
-500: F4^500,
-500: G4^500,
-500: A4^500,
-500: B4^500,
-500: C5^500,
-500: D5^500,
-500: E5^500,
-500: F5^500,
-500: G5^500,
-500: A5^500,
-500: B5^500,
-500: B5^500,
-500: A5^500,
-500: G5^500,
-500: F5^500,
-500: E5^500,
-500: D5^500,
-500: C5^500,
-500: B4^500,
-500: A4^500,
-500: G4^500,
-500: F4^500,
-500: E4^500,
-500: D4^500,
-500: C4^500,
-1500`
+500: C4/500,
+15000`
 
 playTune(myTune)
 
 let level = 0;
 const levels = [
   map`
-.....w..g
+e....w..g
 .....w..w
 .bw.....w
 p.w.....w`,
   map`
-p....
-.b...
-www..
+ww...
+pb...
+www.e
 www..
 .....
 .....
@@ -133,7 +124,7 @@ www..
 ..www
 ....g`,
   map`
-pww...g
+pwwe..g
 .ww....
 .b....b
 www..wg`,
@@ -141,34 +132,52 @@ www..wg`,
 ...ww..ww
 ....wb..p
 .w..w.www
-.w..w..ww
+.w.ew..ww
 .w.....ww
 gw..wwwww`,
   map`
-....
+wwww
 ....
 .bpg
-....`,
+wwww`,
   map`
 ....wwwwwwww
 g....www....
 ww.....w....
 www...bw..w.
 p.w.w..w..w.
-.bw.w.....w.
+ebw.w.....w.
 ....w.....w.
-....w..wwwwg`
-];
-const newLevel = map`
-wwww.w
-.pwg.w
+....w..wwwwg`,
+  map`
+wwwwww
+.pwgew
 .b...w
-.....w`;
+.....w`,
+  map`
+ep..w.e
+.b..wg.
+..w.w..
+w......
+wwww...`,
+  map`
+pw.......wg
+.w.wwwww.w.
+.w....ww.w.
+.w.ww.w.bw.
+...w..w....
+wwwwwww....`,
+  map`
+pw.......wg
+.w.wwwww.w.
+.w....ww.w.
+.w.ww.w.bw.
+...w..w....
+wwwwwww....`,
+];
 
 const currentLevel = levels[level];
 setMap(currentLevel);
-
-levels.push(newLevel);
 
 setSolids([ player, box, wall ]);
 
@@ -180,21 +189,25 @@ setPushables({
 onInput("s", () => {
     getFirst(player).y += 1;
     playTune(myTune);
+    checkCollision();
 });
 
 onInput("d", () => {
     getFirst(player).x += 1;
     playTune(myTune);
+    checkCollision();
 });
 
 onInput("a", () => {
     getFirst(player).x -= 1;
     playTune(myTune);
+    checkCollision();
 });
 
 onInput("w", () => {
     getFirst(player).y -= 1;
     playTune(myTune);
+    checkCollision();
 });
 
 onInput("j", () => {
@@ -206,12 +219,40 @@ onInput("j", () => {
   }
 });
 
+let time = 0;
+let timerInterval;
+
+function startTimer() {
+  timerInterval = setInterval(() => {
+    time += 1;
+    addText(`Time: ${time}s`, { x: 0, y: 0, color: color`2` });
+  }, 1000);
+}
+
+startTimer();
+
+function stopTimer() {
+  clearInterval(timerInterval);
+}
+
+function checkCollision() {
+  const playerTile = getFirst(player);
+  const enemyTiles = getAll(enemy);
+
+  for (const enemyTile of enemyTiles) {
+    if (playerTile.x === enemyTile.x && playerTile.y === enemyTile.y) {
+      // Player collided with enemy
+      setMap(currentLevel); // Reset the level
+      break;
+    }
+  }
+}
+
 afterInput(() => {
   const targetNumber = tilesWith(goal).length;
-  
   const numberCovered = tilesWith(goal, box).length;
 
-  if (numberCovered === tSaargetNumber) {
+  if (numberCovered === targetNumber) {
     level = level + 1;
 
     const currentLevel = levels[level];
@@ -219,7 +260,8 @@ afterInput(() => {
     if (currentLevel !== undefined) {
       setMap(currentLevel);
     } else {
-      addText("You won! Great job!", { y: 4, color: color`6` });
+      stopTimer();
+      addText(`You won!\nYour time: ${time}s`, { y: 4, color: color`3` });
     }
   }
 });
