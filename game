@@ -1,0 +1,225 @@
+/*
+@title: first game
+@tags: ['beginner']
+@addedOn: 2024-07-05
+@author: oli
+*/
+
+const player = "p";
+const box = "b";
+const goal = "g";
+const wall = "w";
+
+setLegend(
+  [ player, bitmap`
+......1111......
+......1111......
+......1111......
+.....111111.....
+....00000000....
+....0......0....
+....0.0.0..0....
+....0......0....
+....0.000..0....
+....0......0....
+....00000000....
+......0..0......
+....000..000....
+................
+................
+................`],
+  [ box, bitmap`
+................
+................
+................
+...CCCCC2CCCCC..
+...CCCCC2CCCCC..
+...CCCCC2CCCCC..
+...CCCCC2CCCCC..
+...CCCCC2CCCCC..
+...22222222222..
+...CCCCC2CCCCC..
+...CCCCC2CCCCC..
+...CCCCC2CCCCC..
+...CCCCC2CCCCC..
+...CCCCC2CCCCC..
+........2.......
+................`],
+  [ goal, bitmap`
+................
+................
+................
+....444444......
+...44....44.....
+...4......4.....
+...4.......4....
+...4..4.4..4....
+...4.......4....
+...44.4..4.4....
+....4..44..4....
+....44....44....
+.....444444.....
+................
+................
+................`],
+  [ wall, bitmap`
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000`]
+);
+
+const myTune = tune`
+500,
+500: C4^500,
+500: D4^500,
+500: E4^500,
+500: F4^500,
+500: G4^500,
+500: A4^500,
+500: B4^500,
+500: C5^500,
+500: D5^500,
+500: E5^500,
+500: F5^500,
+500: G5^500,
+500: A5^500,
+500: B5^500,
+500: B5^500,
+500: A5^500,
+500: G5^500,
+500: F5^500,
+500: E5^500,
+500: D5^500,
+500: C5^500,
+500: B4^500,
+500: A4^500,
+500: G4^500,
+500: F4^500,
+500: E4^500,
+500: D4^500,
+500: C4^500,
+1500`
+
+playTune(myTune)
+
+let level = 0;
+const levels = [
+  map`
+.....w..g
+.....w..w
+.bw.....w
+p.w.....w`,
+  map`
+p....
+.b...
+www..
+www..
+.....
+.....
+..www
+..www
+....g`,
+  map`
+pww...g
+.ww....
+.b....b
+www..wg`,
+  map`
+...ww..ww
+....wb..p
+.w..w.www
+.w..w..ww
+.w.....ww
+gw..wwwww`,
+  map`
+....
+....
+.bpg
+....`,
+  map`
+....wwwwwwww
+g....www....
+ww.....w....
+www...bw..w.
+p.w.w..w..w.
+.bw.w.....w.
+....w.....w.
+....w..wwwwg`
+];
+const newLevel = map`
+wwww.w
+.pwg.w
+.b...w
+.....w`;
+
+const currentLevel = levels[level];
+setMap(currentLevel);
+
+levels.push(newLevel);
+
+setSolids([ player, box, wall ]);
+
+setPushables({
+    [player]: [ box ],
+    [box]: [ box ]
+});
+
+onInput("s", () => {
+    getFirst(player).y += 1;
+    playTune(myTune);
+});
+
+onInput("d", () => {
+    getFirst(player).x += 1;
+    playTune(myTune);
+});
+
+onInput("a", () => {
+    getFirst(player).x -= 1;
+    playTune(myTune);
+});
+
+onInput("w", () => {
+    getFirst(player).y -= 1;
+    playTune(myTune);
+});
+
+onInput("j", () => {
+  const currentLevel = levels[level];
+
+  if (currentLevel !== undefined) {
+    clearText("");
+    setMap(currentLevel);
+  }
+});
+
+afterInput(() => {
+  const targetNumber = tilesWith(goal).length;
+  
+  const numberCovered = tilesWith(goal, box).length;
+
+  if (numberCovered === tSaargetNumber) {
+    level = level + 1;
+
+    const currentLevel = levels[level];
+    
+    if (currentLevel !== undefined) {
+      setMap(currentLevel);
+    } else {
+      addText("You won! Great job!", { y: 4, color: color`6` });
+    }
+  }
+});
