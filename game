@@ -12,7 +12,7 @@ const wall = "w";
 const enemy = "e";
 
 setLegend(
-  [ player, bitmap`
+  [player, bitmap`
 ......1111......
 ......1111......
 ......1111......
@@ -29,7 +29,7 @@ setLegend(
 ................
 ................
 ................`],
-  [ box, bitmap`
+  [box, bitmap`
 ................
 ................
 ................
@@ -46,7 +46,7 @@ setLegend(
 ...CCCCC2CCCCC..
 ........2.......
 ................`],
-  [ goal, bitmap`
+  [goal, bitmap`
 ................
 ................
 ................
@@ -63,23 +63,23 @@ setLegend(
 ................
 ................
 ................`],
-  [ wall, bitmap`
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000
-0000000000000000`],
+  [wall, bitmap`
+LLLLLLLLLLLLLLLL
+LL0000000000000L
+L0L000000000000L
+L00L00000000000L
+L000L0000000000L
+L0000L000000000L
+L00000000000000L
+L00000000000000L
+L00000000000000L
+L00000000000000L
+L00000000000000L
+L00000000000000L
+L00000000000000L
+L00000000000000L
+L00000000000000L
+LLLLLLLLLLLLLLLL`],
   [enemy, bitmap`
 ................
 ................
@@ -141,12 +141,12 @@ wwww
 .bpg
 wwww`,
   map`
-....wwwwwwww
-g....www....
+e...wwwwwwww
+g....wwwe...
 ww.....w....
 www...bw..w.
 p.w.w..w..w.
-ebw.w.....w.
+.bw.w.....w.
 ....w.....w.
 ....w..wwwwg`,
   map`
@@ -167,72 +167,53 @@ pw.......wg
 .w.ww.w.bw.
 ...w..w....
 wwwwwww....`,
-  map`
-pw.......wg
-.w.wwwww.w.
-.w....ww.w.
-.w.ww.w.bw.
-...w..w....
-wwwwwww....`,
 ];
 
-const currentLevel = levels[level];
-setMap(currentLevel);
+setMap(levels[level]);
 
-setSolids([ player, box, wall ]);
+setSolids([player, box, wall]);
 
 setPushables({
-    [player]: [ box ],
-    [box]: [ box ]
-});
-
-onInput("s", () => {
-    getFirst(player).y += 1;
-    playTune(myTune);
-    checkCollision();
-});
-
-onInput("d", () => {
-    getFirst(player).x += 1;
-    playTune(myTune);
-    checkCollision();
-});
-
-onInput("a", () => {
-    getFirst(player).x -= 1;
-    playTune(myTune);
-    checkCollision();
-});
-
-onInput("w", () => {
-    getFirst(player).y -= 1;
-    playTune(myTune);
-    checkCollision();
-});
-
-onInput("j", () => {
-  const currentLevel = levels[level];
-
-  if (currentLevel !== undefined) {
-    clearText("");
-    setMap(currentLevel);
-  }
+  [player]: [box],
+  [box]: [box]
 });
 
 let time = 0;
 let timerInterval;
+let gameStarted = false;
+let bestTime = Infinity; // Initialize best time to infinity
+
+function formatTime(milliseconds) {
+  let seconds = Math.floor(milliseconds / 1000);
+  let ms = milliseconds % 1000;
+  return `${seconds}.${ms.toString().padStart(3, '0')}s`;
+}
 
 function startTimer() {
   timerInterval = setInterval(() => {
-    time += 1;
-    addText(`Time: ${time}s`, { x: 0, y: 0, color: color`2` });
-  }, 1000);
+    time += 100; // increment by 100 milliseconds
+    addText(`Time: ${formatTime(time)}`, { x: 0, y: 0, color: color`2` });
+  }, 100);
 }
-
-startTimer();
 
 function stopTimer() {
   clearInterval(timerInterval);
+}
+
+function startGame() {
+  if (!gameStarted) {
+    gameStarted = true;
+    startTimer();
+  }
+}
+
+function resetGame() {
+  level = 0;
+  time = 0;
+  gameStarted = false;
+  clearText();
+  setMap(levels[level]);
+  stopTimer();
 }
 
 function checkCollision() {
@@ -241,27 +222,66 @@ function checkCollision() {
 
   for (const enemyTile of enemyTiles) {
     if (playerTile.x === enemyTile.x && playerTile.y === enemyTile.y) {
-      // Player collided with enemy
-      setMap(currentLevel); // Reset the level
+      setMap(levels[level]);
       break;
     }
   }
 }
+
+onInput("s", () => {
+  startGame();
+  getFirst(player).y += 1;
+  playTune(myTune);
+  checkCollision();
+});
+
+onInput("d", () => {
+  startGame();
+  getFirst(player).x += 1;
+  playTune(myTune);
+  checkCollision();
+});
+
+onInput("a", () => {
+  startGame();
+  getFirst(player).x -= 1;
+  playTune(myTune);
+  checkCollision();
+});
+
+onInput("w", () => {
+  startGame();
+  getFirst(player).y -= 1;
+  playTune(myTune);
+  checkCollision();
+});
+
+onInput("j", () => {
+  if (levels[level] !== undefined) {
+    clearText("");
+    setMap(levels[level]);
+  }
+});
+
+onInput("k", () => {
+  resetGame();
+});
 
 afterInput(() => {
   const targetNumber = tilesWith(goal).length;
   const numberCovered = tilesWith(goal, box).length;
 
   if (numberCovered === targetNumber) {
-    level = level + 1;
+    level += 1;
 
-    const currentLevel = levels[level];
-    
-    if (currentLevel !== undefined) {
-      setMap(currentLevel);
+    if (levels[level] !== undefined) {
+      setMap(levels[level]);
     } else {
       stopTimer();
-      addText(`You won!\nYour time: ${time}s`, { y: 4, color: color`3` });
+      if (time < bestTime) {
+        bestTime = time;
+      }
+      addText(`You won!\nYour time: ${formatTime(time)}\nBest time: ${formatTime(bestTime)}`, { x: 1, y: 6, color: color`3` });
     }
   }
 });
