@@ -1,10 +1,16 @@
 /*
-Get the package (box) to mr poptato! (the green thing)
+Get the package (box) to Mr. Poptato! (the green thing)
 Watch out! Yellow enemies try to take your parcels!
 @title: boxy
 @tags: ['classic', 'fun']
 @addedOn: 2024-07-05
 @author: olii-dev
+
+Instructions:
+
+Use W, A, S, D to move
+Hit J to restart the level you're currently on
+Hit K to restart to level one (also if you want to play again)
 */
 
 const player = "p";
@@ -15,10 +21,10 @@ const enemy = "e";
 
 setLegend(
   [player, bitmap`
-......1111......
-......1111......
-......1111......
-.....111111.....
+......FFFF......
+......FFFF......
+......FFFF......
+.....FFFFFF.....
 ....00000000....
 ....0......0....
 ....0.0.0..0....
@@ -85,21 +91,76 @@ LLLLLLLLLLLLLLLL`],
   [enemy, bitmap`
 ................
 ................
-....6666666.....
-....6.....6.....
-....66...66.....
-....6.....6.....
-....6666666.....
-....6666666.....
-....6666666.....
-.....6...6......
-.....6...6......
-.....6...6......
+....9999999.....
+....9.....9.....
+....99...99.....
+....9.....9.....
+....9999999.....
+....9999999.....
+....9999999.....
+.....9...9......
+.....9...9......
+.....9...9......
 ................
 ................
 ................
 ................`],
 );
+
+const doom = tune`
+125: G4~125 + E4^125 + C4-125 + A4/125,
+125: F4~125 + D4^125 + B3-125 + G4/125,
+125: E4~125 + C4^125 + A3-125 + F4/125,
+125: D4~125 + B3^125 + G3-125 + E4/125,
+500`;
+
+const melody = tune`
+300: E4~300,
+300: G4~300,
+300: C5~300,
+300: E5~300,
+300: G5^300,
+300: E5~300,
+300: C5~300,
+300: G4~300,
+300: E4~300,
+300: D4~300,
+300: F4~300,
+300: A4~300,
+300: D5^300,
+300: A4~300,
+300: F4~300,
+300: D4~300,
+300: E4~300,
+300: G4~300,
+300: C5~300,
+300: E5~300,
+300: G5^300,
+300: E5~300,
+300: C5~300,
+300: G4~300,
+300: E4~300,
+300: D4~300,
+300: F4~300,
+300: A4~300,
+300: D5^300,
+300: A4~300,
+300: F4~300,
+300: D4~300`;
+
+
+const gameCompleteSound = tune`
+500: C5~500 + E5^500 + G5-500,
+500: E5~500 + G5^500 + B5-500,
+500: G5~500 + B5^500 + D6-500,
+1500`;
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+let playback = playTune(melody, Infinity);
 
 let level = 0;
 const levels = [
@@ -171,15 +232,26 @@ wwwwwwww..w
 g.........w
 wwwwwwwwwww`,
   map`
-wwwwwg..wwwwwwwwwwwww
-ww...w............gww
-.b...w..www..wwwwwwww
-.ww..w..www........ww
-..w..w..b.w.ew..b..ww
-w.w.......w..w.www..w
-p.wwww..eww..w......w
-wwwwwwwwwww..w.....ew
-g............wwwwwwww`
+wwwwwwwwwww
+.......wwww
+.ewebw.wwww
+..w..w.wwww
+e.w....wwww
+..wgew.w..e
+.wwwww.b...
+.w..wwew...
+.b..wwww...
+pwwgwwwg...`,
+  map`
+wwwwwg..wwwwwwww
+ww...w.........g
+.b...w..www..www
+.ww..w..www.....
+..w..w..b.w.ewb.
+w.w.......w..w..
+p.wwww..eww..www
+wwwwwwwwwww..www
+g............www`
 ];
 
 setMap(levels[level]);
@@ -194,7 +266,7 @@ setPushables({
 let time = 0;
 let timerInterval;
 let gameStarted = false;
-let bestTime = localStorage.getItem('bestTime') ? parseInt(localStorage.getItem('bestTime')) : Infinity;
+
 function formatTime(milliseconds) {
   let seconds = Math.floor(milliseconds / 1000);
   let ms = milliseconds % 1000;
@@ -224,12 +296,17 @@ function resetGame() {
   time = 0;
   gameStarted = false;
   clearText();
-  setMap(levels[level]);
-  stopTimer();
-}
+  
+  shuffleArray(levels);
 
-function saveBestTime(milliseconds) {
-  localStorage.setItem('bestTime', milliseconds.toString());
+  if (levels.length > 0) {
+    setMap(levels[level]);
+  } else {
+    addText("No levels available!", { x: 1, y: 6, color: color`3` });
+  }
+
+  stopTimer();
+  playback = playTune(melody, Infinity);
 }
 
 function checkCollision() {
@@ -238,6 +315,9 @@ function checkCollision() {
 
   for (const enemyTile of enemyTiles) {
     if (playerTile.x === enemyTile.x && playerTile.y === enemyTile.y) {
+      playTune(doom, 1);
+      addText("Ouch!", { x: 8, y: 7, color: color`3` });
+      setTimeout(clearText, 1500);
       setMap(levels[level]);
       break;
     }
@@ -290,11 +370,9 @@ afterInput(() => {
       setMap(levels[level]);
     } else {
       stopTimer();
-      if (time < bestTime) {
-        bestTime = time;
-        saveBestTime(bestTime);
-      }
-      addText(`      You won!\nYour time: ${formatTime(time)}\nBest time: ${formatTime(bestTime)}`, { x: 1, y: 6, color: color`3` });
+      playback.end();
+      playTune(gameCompleteSound, 1);
+      addText(`      You won!\nYour time: ${formatTime(time)}\n'K' to play again`, { x: 1, y: 6, color: color`3` });
     }
   }
 });
