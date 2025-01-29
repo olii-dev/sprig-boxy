@@ -1,7 +1,7 @@
 /*
 Get the package (box) to Mr. Poptato! (the green thing)
 Watch out! Yellow enemies try to take your parcels!
-@title: boxy
+@title: Boxy
 @tags: ['classic', 'fun']
 @addedOn: 2024-07-05
 @author: olii-dev
@@ -295,8 +295,7 @@ function resetGame() {
   level = 0;
   time = 0;
   gameStarted = false;
-  clearText();
-  
+  clearText();  
   shuffleArray(levels);
 
   if (levels.length > 0) {
@@ -306,6 +305,7 @@ function resetGame() {
   }
 
   stopTimer();
+  playback.end();
   playback = playTune(melody, Infinity);
 }
 
@@ -352,6 +352,8 @@ onInput("j", () => {
   if (levels[level] !== undefined) {
     clearText("");
     setMap(levels[level]);
+    playback.end();
+    playback = playTune(melody, Infinity);
   }
 });
 
